@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "description": "Web açıklıkları için score hesaplama methodları - LLM'ler tarafından üretilmiş",
+  "llmModels": {
+    "gpt": {
+      "inputs": {
+        "type": "string (xss, csrf, sqli, cookie, csp, storage, network)",
+        "location": "string (script, form, header, body)",
+        "matchCount": "number (toplam eşleşme sayısı)",
+        "evidenceLength": "number (kanıt snippet uzunluğu)",
+        "httpsPresent": "boolean",
+        "userInteractionRequired": "boolean",
+        "isMaliciousURL": "boolean"
+      },
+      "formula": "score = (typeWeight * 0.4) + (locationWeight * 0.2) + (matchCountNorm * 0.2) + (contextWeight * 0.2)",
+      "typeWeights": {
+        "xss": 0.95,
+        "sqli": 0.9,
+        "csrf": 0.75,
+        "cookie": 0.8,
+        "storage": 0.75,
+        "csp": 0.65,
+        "network": 0.7
+      },
+      "locationWeights": {
+        "script": 0.95,
+        "form": 0.7,
+        "header": 0.8,
+        "body": 0.5
+      },
+      "normalize": {
+        "matchCount": "Math.min(matchCount / 10, 1)",
+        "evidenceLength": "Math.min(evidenceLength / 500, 1)",
+        "contextWeight": "(httpsPresent ? 0.3 : 0.8) + (userInteractionRequired ? -0.2 : 0.1) + (isMaliciousURL ? 0.4 : 0)"
+      }
+    },
+    "gemini": {
+      "inputs": {
+        "type": "string",
+        "location": "string",
+        "matchCount": "number",
+        "evidenceLength": "number",
+        "httpsPresent": "boolean",
+        "userInteractionRequired": "boolean",
+        "isMaliciousURL": "boolean"
+      },
+      "formula": "score = ((typeWeight + locationWeight) / 2) * 0.6 + (matchCountNorm * 0.25) + (contextFactor * 0.15)",
+      "typeWeights": {
+        "xss": 0.92,
+        "sqli": 0.88,
+        "csrf": 0.72,
+        "cookie": 0.78,
+        "storage": 0.73,
+        "csp": 0.63,
+        "network": 0.68
+      },
+      "locationWeights": {
+        "script": 0.92,
+        "form": 0.68,
+        "header": 0.78,
+        "body": 0.48
+      },
+      "normalize": {
+        "matchCount": "Math.min(matchCount / 8, 1)",
+        "evidenceLength": "Math.min(evidenceLength / 600, 1)",
+        "contextFactor": "(httpsPresent ? 0.25 : 0.75) + (userInteractionRequired ? -0.15 : 0.15) + (isMaliciousURL ? 0.35 : 0)"
+      }
+    },
+    "deepseek": {
+      "inputs": {
+        "type": "string",
+        "location": "string",
+        "matchCount": "number",
+        "evidenceLength": "number",
+        "httpsPresent": "boolean",
+        "userInteractionRequired": "boolean",
+        "isMaliciousURL": "boolean"
+      },
+      "formula": "score = (typeWeight * 0.35) + (locationWeight * 0.25) + (matchCountNorm * 0.25) + (contextWeight * 0.15)",
+      "typeWeights": {
+        "xss": 0.98,
+        "sqli": 0.92,
+        "csrf": 0.78,
+        "cookie": 0.82,
+        "storage": 0.77,
+        "csp": 0.68,
+        "network": 0.72
+      },
+      "locationWeights": {
+        "script": 0.98,
+        "form": 0.72,
+        "header": 0.82,
+        "body": 0.52
+      },
+      "normalize": {
+        "matchCount": "Math.min(matchCount / 12, 1)",
+        "evidenceLength": "Math.min(evidenceLength / 450, 1)",
+        "contextWeight": "(httpsPresent ? 0.35 : 0.85) + (userInteractionRequired ? -0.25 : 0.2) + (isMaliciousURL ? 0.45 : 0)"
+      }
+    }
+  }
+}

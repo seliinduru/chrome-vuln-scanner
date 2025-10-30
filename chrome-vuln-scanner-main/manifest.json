@@ -16,10 +16,17 @@
     "scripting",
     "storage",
     "notifications",
-    "cookies"
+    "cookies",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["fuzzyLogic.json", "scoreMethods.json"],
+      "matches": ["<all_urls>"]
+    }
   ],
   "background": {
     "service_worker": "background.js"

@@ -4,15 +4,29 @@
 
 let vulnerabilities = [];
 
-// Helper: push vulnerability (benzersiz ID)
-function addVuln(id, title, details, type, severity = 'medium', evidence = null) {
-  vulnerabilities.push({ id, title, details, type, severity, evidence });
+// Helper: push vulnerability with scoring inputs (benzersiz ID)
+function addVuln(id, title, details, type, severity = 'medium', evidence = null, location = 'inline', matchCount = 1, contextFactors = false, userInteraction = false, externalFactors = false) {
+  vulnerabilities.push({ 
+    id, 
+    title, 
+    details, 
+    type, 
+    severity, 
+    evidence,
+    // Scoring inputs
+    location: location || 'inline',
+    matchCount: matchCount || 1,
+    contextFactors: contextFactors || false,
+    userInteractionRequired: userInteraction || false,
+    isMaliciousURL: externalFactors || false
+  });
 }
 
 // Ana tarama fonksiyonu
 function scanPage() {
   vulnerabilities = []; // temizle
   try {
+    checkURLParameters(); // URL param'leri tara
     checkForXSSVulnerabilities();
     checkCookieSecurity();
     checkStorageSecurity();
@@ -26,32 +40,121 @@ function scanPage() {
   }
 }
 
-// 1) XSS kontrolleri (kod arama + DOM tarama)
+// 1) URL Parametreleri Güvenlik Kontrolleri
+function checkURLParameters() {
+  try {
+    const url = window.location.href;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // Tüm URL parametrelerini tara
+    for (const [key, value] of urlParams) {
+      // 1. XSS payload indicators
+      if (/<|>|"|'|javascript:|onerror|onload|onclick/i.test(value)) {
+        addVuln(
+          'url_param_xss_' + key,
+          `Potansiyel XSS riski: URL parametresi "${key}"`,
+          `URL parametresi "${key}=${value.slice(0, 50)}" HTML/JS karakterleri içeriyor. Eğer bu parametre DOM'a yazılırsa XSS riski vardır.`,
+          'xss',
+          'high',
+          { paramName: key, paramValue: value.slice(0, 100) },
+          'url',
+          1,
+          false,
+          false,
+          true
+        );
+      }
+      
+      // 2. SQL injection indicators
+      if (/'|"|--|;|or\s+1|union|select|insert|delete|drop/i.test(value)) {
+        addVuln(
+          'url_param_sqli_' + key,
+          `Potansiyel SQL Injection riski: URL parametresi "${key}"`,
+          `URL parametresi "${key}=${value.slice(0, 50)}" SQL karakterleri içeriyor. Server-side query'lerde kullanılıyorsa SQLi riski vardır.`,
+          'sql',
+          'high',
+          { paramName: key, paramValue: value.slice(0, 100) },
+          'url',
+          1,
+          false,
+          false,
+          true
+        );
+      }
+      
+      // 3. Path traversal
+      if (/\.\.|\/\/|%2e%2e|\.\.\//i.test(value)) {
+        addVuln(
+          'url_param_path_traversal_' + key,
+          `Potansiyel Path Traversal riski: URL parametresi "${key}"`,
+          `URL parametresi "${key}=" path traversal karakterleri içeriyor (../ veya //). Dosya erişim kontrolünü atlamak için kullanılabilir.`,
+          'path-traversal',
+          'high',
+          { paramName: key, paramValue: value.slice(0, 100) },
+          'url',
+          1,
+          false,
+          false,
+          true
+        );
+      }
+    }
+    
+    // Hash parametreleri de kontrol et (eğer app bunları kullanıyorsa)
+    const hashParams = new URLSearchParams(window.location.hash.slice(1));
+    for (const [key, value] of hashParams) {
+      if (/<|>|"|'|javascript:/i.test(value)) {
+        addVuln(
+          'hash_param_xss_' + key,
+          `Potansiyel XSS riski: Hash parametresi "${key}"`,
+          `URL hash parametresi "${key}=${value.slice(0, 50)}" HTML karakterleri içeriyor.`,
+          'xss',
+          'medium',
+          { paramName: key, paramValue: value.slice(0, 100) },
+          'url',
+          1,
+          false,
+          false,
+          true
+        );
+      }
+    }
+  } catch (e) {
+    console.error('checkURLParameters error', e);
+  }
+}
+
+// 2) XSS kontrolleri (kod arama + DOM tarama)
 function checkForXSSVulnerabilities() {
   const pageSource = document.documentElement.outerHTML || '';
 
   // 1. innerHTML, insertAdjacentHTML, outerHTML kullanımı
   if (/\.\s*innerHTML\s*=?|innerHTML\s*=/.test(pageSource) || pageSource.includes('insertAdjacentHTML') || /outerHTML\s*=/.test(pageSource)) {
-    addVuln('xss_dom_write', 'Potansiyel XSS (DOM yazma kullanımı)', 'innerHTML/insertAdjacentHTML/outerHTML gibi DOM yazma çağrıları tespit edildi. Kullanıcı girdisiyle birlikte kullanılıyorsa XSS riski vardır.', 'xss', 'high', { snippet: extractSnippet(pageSource, ['innerHTML','insertAdjacentHTML','outerHTML']) });
+    const matches = (pageSource.match(/innerHTML|insertAdjacentHTML|outerHTML/g) || []).length;
+    addVuln('xss_dom_write', 'Potansiyel XSS (DOM yazma kullanımı)', 'innerHTML/insertAdjacentHTML/outerHTML gibi DOM yazma çağrıları tespit edildi. Kullanıcı girdisiyle birlikte kullanılıyorsa XSS riski vardır.', 'xss', 'high', { snippet: extractSnippet(pageSource, ['innerHTML','insertAdjacentHTML','outerHTML']) }, 'script', matches, true);
   }
 
   // 2. document.write / writeln
   if (/document\.write\s*\(|document\.writeln\s*\(/.test(pageSource)) {
-    addVuln('xss_document_write', 'Potansiyel XSS (document.write)', 'document.write veya document.writeln kullanımı bulundu. Dinamik içerik yazarken dikkatli olun.', 'xss', 'medium');
+    const matches = (pageSource.match(/document\.write|document\.writeln/g) || []).length;
+    addVuln('xss_document_write', 'Potansiyel XSS (document.write)', 'document.write veya document.writeln kullanımı bulundu. Dinamik içerik yazarken dikkatli olun.', 'xss', 'medium', null, 'script', matches, true);
   }
 
   // 3. eval, Function constructor, setTimeout/setInterval string argümanları
   if (/\beval\s*\(|new\s+Function\s*\(|setTimeout\s*\(\s*['"`]|setInterval\s*\(\s*['"`]/.test(pageSource)) {
-    addVuln('xss_eval_like', 'Riskli dinamik kod çalıştırma', 'eval/new Function veya setTimeout/setInterval(string) görünüyor. Tüm kullanıcı girdileri kontrol edilmeli.', 'xss', 'high');
+    const matches = (pageSource.match(/eval|Function|setTimeout|setInterval/g) || []).length;
+    addVuln('xss_eval_like', 'Riskli dinamik kod çalıştırma', 'eval/new Function veya setTimeout/setInterval(string) görünüyor. Tüm kullanıcı girdileri kontrol edilmeli.', 'xss', 'high', null, 'script', matches, true);
   }
 
   // 4. Inline event handler'lar (onclick, onerror, ...)
   const all = document.getElementsByTagName('*');
+  let handlerCount = 0;
   for (let el of all) {
     for (let i=0;i<el.attributes.length;i++) {
       const a = el.attributes[i];
       if (/^on/i.test(a.name) && a.value && a.value.trim() !== '') {
-        addVuln('xss_inline_handler', 'Inline event handler tespit edildi', `Element ${el.tagName} üzerinde inline handler ${a.name}="${a.value.slice(0,120)}" bulundu.`, 'xss', 'medium', { attr: a.name, value: a.value.slice(0,300) });
+        handlerCount++;
+        addVuln('xss_inline_handler', 'Inline event handler tespit edildi', `Element ${el.tagName} üzerinde inline handler ${a.name}="${a.value.slice(0,120)}" bulundu.`, 'xss', 'medium', { attr: a.name, value: a.value.slice(0,300) }, 'html', 1, false, true);
       }
     }
   }
@@ -59,7 +162,7 @@ function checkForXSSVulnerabilities() {
   // 5. javascript: URL'leri
   const anchors = document.querySelectorAll('a[href^="javascript:"]');
   if (anchors.length > 0) {
-    addVuln('xss_js_url', 'javascript: URL tespit edildi', `${anchors.length} adet javascript: link bulundu. Bunlar XSS için tehlikeli olabilir.`, 'xss', 'low');
+    addVuln('xss_js_url', 'javascript: URL tespit edildi', `${anchors.length} adet javascript: link bulundu. Bunlar XSS için tehlikeli olabilir.`, 'xss', 'low', null, 'html', anchors.length);
   }
 
   // 6. script.textContent ile dinamik script ekleme tespiti (inline script içeriğini tara)
@@ -67,14 +170,15 @@ function checkForXSSVulnerabilities() {
   scripts.forEach(s => {
     const content = s.textContent || '';
     if (content && (/\beval\s*\(|new\s+Function\s*\(|document\.write|innerHTML|insertAdjacentHTML/.test(content))) {
-      addVuln('xss_inline_script', 'Inline script içinde riskli kullanım', 'Bir <script> içinde eval/innerHTML/document.write/insertAdjacentHTML vb. kullanımı tespit edildi.', 'xss', 'high', { snippet: content.slice(0,300) });
+      addVuln('xss_inline_script', 'Inline script içinde riskli kullanım', 'Bir <script> içinde eval/innerHTML/document.write/insertAdjacentHTML vb. kullanımı tespit edildi.', 'xss', 'high', { snippet: content.slice(0,300) }, 'script', 1, true);
     }
   });
 
   // 7. kaynak toplama / location.search/hash referansları
   if (/\blocation\.search\b|\blocation\.hash\b/.test(pageSource)) {
     // Eğer aynı sayfada innerHTML gibi varsa birleşik uyarı ver
-    addVuln('xss_source_param', 'URL parametreleri kullanımı', 'Kod içinde location.search veya location.hash referansı bulundu. Eğer bu veriler sanitasyon olmadan DOM\'a yazılıyorsa XSS riski vardır.', 'xss', 'medium');
+    const matches = (pageSource.match(/location\.search|location\.hash/g) || []).length;
+    addVuln('xss_source_param', 'URL parametreleri kullanımı', 'Kod içinde location.search veya location.hash referansı bulundu. Eğer bu veriler sanitasyon olmadan DOM\'a yazılıyorsa XSS riski vardır.', 'xss', 'medium', null, 'script', matches, true);
   }
 
   // 8. createElement('script') + textContent assignment
@@ -83,17 +187,21 @@ function checkForXSSVulnerabilities() {
   }
 }
 
-// 2) Cookie güvenliği (client-side kontroller)
+// 3) Cookie güvenliği (client-side kontroller)
 function checkCookieSecurity() {
   try {
+    // HTTPS kontrolü ilk yap
+    if (window.location.protocol !== 'https:') {
+      addVuln('page_insecure_transport', 'Sayfa HTTP (HTTPS değil)', 'Sayfa HTTPS üzerinden değil. Tüm veriler zayıf bir bağlantı üzerinden gidiyor olabilir.', 'transport', 'high', null, 'network', 1, false, false, true);
+    }
+    
     const raw = document.cookie || '';
     if (!raw) {
-      // boşsa uyarma; bazı sayfalarda HttpOnly cookie olduğu için client göremez
-      // ama gene de bilgiyi not et
+      // boşsa: HttpOnly cookie olduğu için client göremez, bu güvenli
       // addVuln('cookie_none', 'document.cookie boş', 'document.cookie boş veya HttpOnly cookie kullanılıyor olabilir. HttpOnly cookie güvenlik açısından iyidir.', 'cookie', 'info');
     } else {
       // sensitif anahtar isimleri kontrolü
-      const sensitiveKeys = ['token','session','auth','passwd','password','jwt','access'];
+      const sensitiveKeys = ['token','session','auth','passwd','password','jwt','access','sid'];
       const pairs = raw.split(';').map(s=>s.trim());
       for (let p of pairs) {
         const [k,v] = p.split('=').map(x=>x && x.trim());
@@ -101,14 +209,9 @@ function checkCookieSecurity() {
         const lower = k.toLowerCase();
         for (let s of sensitiveKeys) {
           if (lower.includes(s)) {
-            addVuln('cookie_sensitive', 'Hassas bilgi içeren cookie', `document.cookie içinde "${k}" benzeri bir anahtar bulundu. Bu cookie client-side erişilebilir olabilir.`, 'cookie', 'high', { cookie: k });
+            addVuln('cookie_sensitive', 'Hassas bilgi içeren cookie', `document.cookie içinde "${k}" benzeri bir anahtar bulundu. Bu cookie client-side erişilebilir olabilir.`, 'cookie', 'high', { cookie: k }, 'dom', 1, true, false);
           }
         }
-      }
-
-      // HTTPS kontrolü
-      if (window.location.protocol !== 'https:') {
-        addVuln('cookie_insecure_transport', 'Sayfa HTTPS değil', 'Sayfa HTTPS üzerinden değil; cookie ve form bilgileri zayıf bir bağlantı üzerinden gidiyor olabilir.', 'cookie', 'high');
       }
     }
 
@@ -138,7 +241,7 @@ function checkStorageSecurity() {
       }
     }
     if (suspectKeys.length) {
-      addVuln('storage_sensitive', 'Hassas veri local/session storageta', `localStorage/sessionStorage içinde hassas anahtarlar bulundu. Tarayıcı tarafında saklanan hassas veriler çalınabilir.`, 'storage', 'high', { items: suspectKeys });
+      addVuln('storage_sensitive', 'Hassas veri local/session storageta', `localStorage/sessionStorage içinde hassas anahtarlar bulundu. Tarayıcı tarafında saklanan hassas veriler çalınabilir.`, 'storage', 'high', { items: suspectKeys }, 'dom', suspectKeys.length, true, false);
     }
   } catch (e) {
     console.error('checkStorageSecurity error', e);
@@ -156,12 +259,12 @@ function checkPasswordFields() {
       const nameOrId = field.name || field.id || '(belirtilmemiş)';
       // HTTPS kontrolü
       if (window.location.protocol !== 'https:') {
-        addVuln('password_insecure_transport', 'Şifre alanı HTTP üzerinde', `Şifre alanı "${nameOrId}" HTTP (HTTPS değil). Her zaman HTTPS kullanılmalıdır.`, 'password', 'high');
+        addVuln('password_insecure_transport', 'Şifre alanı HTTP üzerinde', `Şifre alanı "${nameOrId}" HTTP (HTTPS değil). Her zaman HTTPS kullanılmalıdır.`, 'password', 'high', null, 'html', 1, false, false, true);
       }
 
       // autocomplete kontrolü
       if (field.autocomplete !== 'off') {
-        addVuln('password_autocomplete', 'Şifre alanında autocomplete açık', `Şifre alanı "${nameOrId}" autocomplete="off" değil. Tarayıcı şifre kaydedebilir.`, 'password', 'low');
+        addVuln('password_autocomplete', 'Şifre alanında autocomplete açık', `Şifre alanı "${nameOrId}" autocomplete="off" değil. Tarayıcı şifre kaydedebilir.`, 'password', 'low', null, 'html', 1, false, true);
       }
 
       // form method ve action kontrolü
@@ -169,11 +272,11 @@ function checkPasswordFields() {
         const method = (form.method || '').toLowerCase();
         const action = form.action || window.location.href;
         if (method && method !== 'post') {
-          addVuln('password_form_method', 'Şifre formu GET methodu kullanıyor', `Şifre formu "${nameOrId}" GET ile gönderiliyor (method="${method}"). POST tercih edilmelidir.`, 'password', 'high', { method });
+          addVuln('password_form_method', 'Şifre formu GET methodu kullanıyor', `Şifre formu "${nameOrId}" GET ile gönderiliyor (method="${method}"). POST tercih edilmelidir.`, 'password', 'high', { method }, 'html', 1, false, true);
         }
         if (action && !action.startsWith('https://') && window.location.protocol === 'https:') {
           // sayfa HTTPS ama form action http ise
-          addVuln('password_form_action_insecure', 'Şifre formu insecure action', `Form action adresi güvenli değil: ${action}`, 'password', 'high');
+          addVuln('password_form_action_insecure', 'Şifre formu insecure action', `Form action adresi güvenli değil: ${action}`, 'password', 'high', null, 'network', 1, false, false, true);
         }
 
         // CSRF token kontrolü: gizli input içinde 'csrf' benzeri isim ara
@@ -184,17 +287,17 @@ function checkPasswordFields() {
           if (n.includes('csrf') || n.includes('token') || n.includes('xsrf')) hasCSRF = true;
         });
         if (!hasCSRF) {
-          addVuln('csrf_missing', 'CSRF token eksik görünüyor', `Form "${nameOrId}" içinde CSRF token (hidden input) bulunamadı.`, 'csrf', 'medium');
+          addVuln('csrf_missing', 'CSRF token eksik görünüyor', `Form "${nameOrId}" içinde CSRF token (hidden input) bulunamadı.`, 'csrf', 'medium', null, 'html', 1, false, false);
         }
       } else {
         // form yoksa: JS ile submit ediliyor olabilir; yine uyar
-        addVuln('password_no_form', 'Şifre alanı bir form içinde değil', `Şifre alanı "${nameOrId}" herhangi bir <form> etiketinin içinde değil. Doğru gönderim akışının olup olmadığını kontrol edin.`, 'password', 'low');
+        addVuln('password_no_form', 'Şifre alanı bir form içinde değil', `Şifre alanı "${nameOrId}" herhangi bir <form> etiketinin içinde değil. Doğru gönderim akışının olup olmadığını kontrol edin.`, 'password', 'low', null, 'html', 1, false, true);
       }
 
       // URL'de hassas bilgi kontrolü
       const href = window.location.href || '';
       if (/password=|passwd=|token=|access_token=|jwt=/i.test(href)) {
-        addVuln('sensitive_in_url', 'URL içinde hassas bilgi', `URL içinde "password/token/jwt" parametreleri bulunuyor: ${href}`, 'info', 'high');
+        addVuln('sensitive_in_url', 'URL içinde hassas bilgi', `URL içinde "password/token/jwt" parametreleri bulunuyor: ${href}`, 'info', 'high', null, 'network', 1, false, false, true);
       }
     });
   } catch (e) {
@@ -207,16 +310,16 @@ function checkCSP() {
   try {
     const meta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
     if (!meta) {
-      addVuln('csp_missing', 'CSP eksik', 'Sayfada meta Content-Security-Policy bulunmuyor. CSP header ve/veya meta ile XSS riskleri azaltılabilir.', 'csp', 'medium');
+      addVuln('csp_missing', 'CSP eksik', 'Sayfada meta Content-Security-Policy bulunmuyor. CSP header ve/veya meta ile XSS riskleri azaltılabilir.', 'csp', 'medium', null, 'meta', 0, false);
       return;
     }
     const policy = meta.getAttribute('content') || '';
     // Basit kontroller
     if (!/script-src/.test(policy)) {
-      addVuln('csp_no_script_src', 'CSP script-src yok veya yetersiz', 'CSP politika içeriğinde script-src direktifi görünmüyor veya çok geniş olabilir.', 'csp', 'medium', { policy: policy.slice(0,300) });
+      addVuln('csp_no_script_src', 'CSP script-src yok veya yetersiz', 'CSP politika içeriğinde script-src direktifi görünmüyor veya çok geniş olabilir.', 'csp', 'medium', { policy: policy.slice(0,300) }, 'meta', 1, true);
     }
     if (/unsafe-inline|unsafe-eval/.test(policy)) {
-      addVuln('csp_unsafe', 'CSP unsafe inline/eval izni var', 'CSP içinde unsafe-inline veya unsafe-eval gördük. Bu XSS riskini artırır.', 'csp', 'high', { policy: policy.slice(0,300) });
+      addVuln('csp_unsafe', 'CSP unsafe inline/eval izni var', 'CSP içinde unsafe-inline veya unsafe-eval gördük. Bu XSS riskini artırır.', 'csp', 'high', { policy: policy.slice(0,300) }, 'meta', 1, true);
     }
 
   } catch (e) {
