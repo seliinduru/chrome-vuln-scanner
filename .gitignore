@@ -1,0 +1,10 @@
+# Ignore local history snapshots and editor artifacts
+.history/
+
+# Node / environment
+node_modules/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
