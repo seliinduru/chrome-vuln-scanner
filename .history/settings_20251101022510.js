@@ -1,6 +1,17 @@
 // settings.js
 // Ayarlar sayfası için JavaScript kodları
 
+// DOM elementini global olarak al
+const statusTextSpan = document.getElementById('statusText');
+
+// Helper: Durum mesajını ayarla
+function setStatus(text) {
+  // Eğer element yüklendiyse (null değilse) metni değiştir.
+  if (statusTextSpan) {
+    statusTextSpan.textContent = text;
+  }
+}
+
 // Sayfa yüklendiğinde mevcut ayarları yükle
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
@@ -15,6 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Ayarları sıfırla butonu
   document.getElementById('resetSettingsBtn').addEventListener('click', resetSettings);
+  
+  // İlk yükleme durumunu ayarla
+  setStatus('Ayarlar');
 });
 
 // Mevcut ayarları yükle
@@ -32,7 +46,7 @@ function loadSettings() {
       checkbox.checked = settings.vulnTypes.includes(checkbox.value);
     });
     
-    // Tarama seçenekleri (settings.html'de yok, ancak kodda tutuldu)
+    // Tarama seçenekleri (Eğer settings.html'de bu seçenekler varsa)
     document.querySelectorAll('input[name="scanOption"]').forEach(checkbox => {
       checkbox.checked = settings.scanOptions.includes(checkbox.value);
     });
@@ -64,9 +78,10 @@ function saveSettings() {
   
   // Ayarları kaydet
   chrome.storage.local.set({ scannerSettings: settings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar kaydedildi';
+    // Hata çözümü için setStatus kullanıldı
+    setStatus('Ayarlar kaydedildi');
     setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
+      setStatus('Ayarlar');
     }, 2000);
   });
 }
@@ -101,9 +116,10 @@ function resetSettings() {
   
   // Ayarları kaydet
   chrome.storage.local.set({ scannerSettings: defaultSettings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar sıfırlandı';
+    // Hata çözümü için setStatus kullanıldı
+    setStatus('Ayarlar sıfırlandı');
     setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
+      setStatus('Ayarlar');
     }, 2000);
   });
 }

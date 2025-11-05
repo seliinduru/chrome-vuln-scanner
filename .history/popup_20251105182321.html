@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>Web Güvenlik Tarayıcısı</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="modal">
+    <header class="modal-header">
+      <h1>Web Güvenlik Tarayıcısı</h1>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="results">Sonuçlar</button>
+      <button class="tab" data-tab="ai">AI Çözüm Önerileri</button>
+      <button class="tab" data-tab="settings">Ayarlar</button>
+    </nav>
+
+    <!-- === SONUÇLAR SEKMESİ === -->
+    <section id="results" class="tab-content active">
+
+      <!-- 1. YENİ KONTROL ÇUBUĞU -->
+      <div class="control-bar">
+        <button id="scanBtn" class="primary">Sayfayı Tara</button>
+        <div class="export-buttons">
+          <button id="exportJson" title="JSON olarak dışa aktar">JSON</button>
+          <button id="exportCsv" title="CSV olarak dışa aktar">CSV</button>
+        </div>
+      </div>
+
+      <!-- 2. YENİ KATLANABİLİR AYARLAR PANELİ -->
+      <details class="view-options card">
+        <summary>
+          <h3><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.46L22 3z"></path></svg> Görünüm Seçenekleri</h3>
+        </summary>
+        <div class="options-content">
+          <div class="model-selector">
+            <div class="model-group">
+              <label>Score Method:</label>
+              <select id="scoreMethodSelect"></select>
+            </div>
+            <div class="model-group">
+              <label>Fuzzy Logic:</label>
+              <select id="fuzzyLogicSelect"></select>
+            </div>
+          </div>
+          <div class="filters">
+            <span>Filtrele:</span>
+            <div class="filter-buttons">
+              <button class="filter active" data-sev="all">Tümü</button>
+              <button class="filter" data-sev="high">Yüksek</button>
+              <button class="filter" data-sev="medium">Orta</button>
+              <button class="filter" data-sev="low">Düşük</button>
+            </div>
+          </div>
+        </div>
+      </details>
+      
+      <!-- 3. GÜNCELLENMİŞ ZAFİYET LİSTESİ ALANI -->
+      <h3 class="results-title">Tarama Sonuçları</h3>
+      <div id="vulnList" class="vuln-list">
+        <!-- Boş durum JS tarafından yönetilecek -->
+      </div>
+    </section>
+
+    <!-- === AI ÇÖZÜM ÖNERİLERİ SEKMESİ === -->
+    <section id="ai" class="tab-content">
+      <div class="card">
+        <div id="aiSuggestions">
+          <!-- İçerik JS tarafından yönetilecek -->
+        </div>
+      </div>
+    </section>
+
+    <footer class="modal-footer">
+      <small>Web Güvenlik Tarayıcısı — <span id="statusText">Hazır</span></small>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

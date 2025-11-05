@@ -1,8 +1,10 @@
-// popup.js - MENÜ HATASI DÜZELTİLMİŞ NİHAİ VERSİYON
+// popup.js - DETAY PANELİ ÖZELLİĞİ EKLENMİŞ NİHAİ VERSİYON
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Global Değişkenler ve DOM Elementleri
+    // =========================================================================
+    // GLOBAL STATE & DOM ELEMENTS
+    // =========================================================================
     let currentVulns = [];
     let currentFilter = 'all';
     let selectedModels = { scoreMethod: 'gpt', fuzzyLogic: 'gpt' };
@@ -10,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let scoreMethods = null;
     let isScanning = false;
 
+    // DOM Elementleri
     const scanBtn = document.getElementById('scanBtn');
     const vulnList = document.getElementById('vulnList');
     const statusText = document.getElementById('statusText');
@@ -18,14 +21,141 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiSuggestions = document.getElementById('aiSuggestions');
     const exportJsonBtn = document.getElementById('exportJson');
     const exportCsvBtn = document.getElementById('exportCsv');
+    // YENİ DOM ELEMENTLERİ
     const vulnDetails = document.getElementById('vulnDetails');
 
-    // Yardımcı Fonksiyonlar
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
+    const setStatus = (message) => { if (statusText) statusText.textContent = message; };
+    const filterVulns = (vulns) => { if (currentFilter === 'all') return vulns; return vulns.filter(v => (v.severity || 'medium').toLowerCase() === currentFilter); };
+    const downloadFile = (content, fileName, contentType) => { /* ... değişiklik yok ... */ };
+
+    // =========================================================================
+    // SCORE & FUZZY LOGIC ENGINES (Değişiklik yok)
+    // =========================================================================
+    const ScoreCalculator = { /* ... değişiklik yok ... */ };
+    const FuzzyLogicEngine = { /* ... değişiklik yok ... */ };
+    
+    // =========================================================================
+    // CORE LOGIC & RENDERING
+    // =========================================================================
+    const generateHybridResults = () => { /* ... değişiklik yok ... */ };
+    const renderAiSuggestions = (vulns) => { /* ... değişiklik yok ... */ };
+
+    // --- YENİ FONKSİYON: ZAFİYET DETAYLARINI GÖSTER ---
+    const showVulnDetails = (vuln) => {
+        if (!vuln || !vulnDetails) return;
+
+        // Evidence'ı formatla
+        const evidenceContent = vuln.evidence 
+            ? JSON.stringify(vuln.evidence, null, 2).replace(/</g, "&lt;").replace(/>/g, "&gt;")
+            : 'Kanıt bulunamadı.';
+
+        // Detay panelinin HTML içeriğini oluştur
+        vulnDetails.innerHTML = `
+            <div class="card detail-card">
+                <button id="backToListBtn" class="back-button">← Sonuçlara Geri Dön</button>
+                <div class="vuln-header">
+                    <span class="vuln-severity severity-${vuln.severity}">${vuln.fuzzySeverity} (${vuln.llmScore}/100)</span>
+                    <h4>${vuln.title}</h4>
+                </div>
+                <p class="detail-description">${vuln.details}</p>
+                
+                <h5>Risk Faktörleri</h5>
+                <ul class="detail-factors">
+                    <li><strong>Zafiyet Türü:</strong> ${vuln.type.toUpperCase()}</li>
+                    <li><strong>Bulunduğu Yer:</strong> ${vuln.location}</li>
+                    <li><strong>Tespit Sayısı:</strong> ${vuln.matchCount}</li>
+                </ul>
+
+                <h5>Teknik Kanıt (Evidence)</h5>
+                <pre class="detail-evidence">${evidenceContent}</pre>
+            </div>
+        `;
+        
+        // Geri dön butonuna tıklama olayı ekle
+        document.getElementById('backToListBtn').addEventListener('click', () => {
+            vulnList.style.display = 'block';
+            vulnDetails.style.display = 'none';
+        });
+
+        // Liste'yi gizle, detayları göster
+        vulnList.style.display = 'none';
+        vulnDetails.style.display = 'block';
+    };
+
+    const renderVulns = () => {
+        if (!vulnList) return;
+        
+        // Başlangıçta detay panelini gizle, listeyi göster
+        vulnDetails.style.display = 'none';
+        vulnList.style.display = 'block';
+
+        if (!fuzzyLogicConfig || !scoreMethods) {
+            setStatus("Hata: Değerlendirme modelleri yüklenemedi.");
+            vulnList.innerHTML = `<div class="empty-state"><p>Arka plan betiğinde hata oluştu.</p></div>`;
+            return;
+        }
+
+        generateHybridResults();
+        const filteredVulns = filterVulns(currentVulns);
+        vulnList.innerHTML = '';
+        if (filteredVulns.length === 0) {
+            vulnList.innerHTML = '<div class="empty-state"><p>Tarama sonucu bulunamadı.</p></div>';
+            setStatus(`Kullanıma hazır.`);
+            return;
+        }
+
+        filteredVulns.forEach(vuln => {
+            const item = document.createElement('div');
+            const sevClass = (vuln.severity || 'medium').toLowerCase();
+            item.className = `vuln-item severity-${sevClass} clickable`; // "clickable" sınıfı eklendi
+            
+            // Veri-indeksi ekleyerek hangi zafiyete tıklandığını bileceğiz
+            item.dataset.vulnIndex = currentVulns.indexOf(vuln);
+
+            item.innerHTML = `
+                <div class="vuln-header">
+                    <span class="vuln-severity ${sevClass}">${vuln.fuzzySeverity || 'Orta'} (${vuln.llmScore || 'N/A'}/100)</span>
+                    <h4>${vuln.title || 'Bilinmeyen Açık'} (${vuln.type.toUpperCase()})</h4>
+                </div>
+                <p class="vuln-details">${vuln.details}</p>`;
+            
+            // Her bir zafiyet öğesine tıklama olayı ekle
+            item.addEventListener('click', () => {
+                const index = parseInt(item.dataset.vulnIndex, 10);
+                showVulnDetails(currentVulns[index]);
+            });
+
+            vulnList.appendChild(item);
+        });
+        setStatus(`Tarama tamamlandı — ${filteredVulns.length} açık bulundu`);
+    };
+    
+    // =========================================================================
+    // COMMUNICATION & INITIALIZATION (Değişiklik yok)
+    // =========================================================================
+    const startScan = async () => { /* ... öncekiyle aynı ... */ };
+    const loadInitialData = async () => { /* ... öncekiyle aynı ... */ };
+
+    // =========================================================================
+    // EVENT LISTENERS & INITIAL LOAD (Değişiklik yok)
+    // =========================================================================
+    // ...
+    // KODUNUZDAKİ MEVCUT EVENT LISTENER'LARI VE loadInitialData() ÇAĞRISINI BURADA TUTUN
+    // ...
+});
+
+
+// === KOPYALA-YAPIŞTIR KOLAYLIĞI İÇİN TÜM KOD ===
+// Lütfen yukarıdaki açıklamaları okuduktan sonra mevcut popup.js dosyanızı aşağıdakiyle değiştirin.
+document.addEventListener('DOMContentLoaded', () => {
+    let currentVulns = []; let currentFilter = 'all'; let selectedModels = { scoreMethod: 'gpt', fuzzyLogic: 'gpt' }; let fuzzyLogicConfig = null; let scoreMethods = null; let isScanning = false;
+    const scanBtn = document.getElementById('scanBtn'); const vulnList = document.getElementById('vulnList'); const statusText = document.getElementById('statusText'); const scoreMethodSelect = document.getElementById('scoreMethodSelect'); const fuzzyLogicSelect = document.getElementById('fuzzyLogicSelect'); const aiSuggestions = document.getElementById('aiSuggestions'); const exportJsonBtn = document.getElementById('exportJson'); const exportCsvBtn = document.getElementById('exportCsv'); const vulnDetails = document.getElementById('vulnDetails');
     const setStatus = (message) => { if (statusText) statusText.textContent = message; };
     const filterVulns = (vulns) => { if (currentFilter === 'all') return vulns; return vulns.filter(v => (v.severity || 'medium').toLowerCase() === currentFilter); };
     const downloadFile = (content, fileName, contentType) => { const a = document.createElement("a"); const file = new Blob([content], { type: contentType }); a.href = URL.createObjectURL(file); a.download = fileName; a.click(); URL.revokeObjectURL(a.href); };
-
-    // Skorlama ve Değerlendirme Motorları
     const ScoreCalculator = {
         calculateScore: (vuln, config, modelName) => {
             if (!config || !config.typeWeights) return 50;
@@ -37,19 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const userInteractionRequired = vuln.userInteractionRequired;
             const isMaliciousURL = vuln.isMaliciousURL;
             let matchCountNorm = 0, contextWeight = 0, score = 0;
-            if (modelName === 'gemini') {
-                matchCountNorm = Math.min(matchCount / 8, 1);
-                contextWeight = (httpsPresent ? 0.25 : 0.75) + (userInteractionRequired ? -0.15 : 0.15) + (isMaliciousURL ? 0.35 : 0);
-                score = ((typeWeight + locationWeight) / 2) * 0.6 + (matchCountNorm * 0.25) + (contextWeight * 0.15);
-            } else if (modelName === 'deepseek') {
-                matchCountNorm = Math.min(matchCount / 12, 1);
-                contextWeight = (httpsPresent ? 0.35 : 0.85) + (userInteractionRequired ? -0.25 : 0.2) + (isMaliciousURL ? 0.45 : 0);
-                score = (typeWeight * 0.35) + (locationWeight * 0.25) + (matchCountNorm * 0.25) + (contextWeight * 0.15);
-            } else {
-                matchCountNorm = Math.min(matchCount / 10, 1);
-                contextWeight = (httpsPresent ? 0.3 : 0.8) + (userInteractionRequired ? -0.2 : 0.1) + (isMaliciousURL ? 0.4 : 0);
-                score = (typeWeight * 0.4) + (locationWeight * 0.2) + (matchCountNorm * 0.2) + (contextWeight * 0.2);
-            }
+            if (modelName === 'gemini') { matchCountNorm = Math.min(matchCount / 8, 1); contextWeight = (httpsPresent ? 0.25 : 0.75) + (userInteractionRequired ? -0.15 : 0.15) + (isMaliciousURL ? 0.35 : 0); score = ((typeWeight + locationWeight) / 2) * 0.6 + (matchCountNorm * 0.25) + (contextWeight * 0.15); } else if (modelName === 'deepseek') { matchCountNorm = Math.min(matchCount / 12, 1); contextWeight = (httpsPresent ? 0.35 : 0.85) + (userInteractionRequired ? -0.25 : 0.2) + (isMaliciousURL ? 0.45 : 0); score = (typeWeight * 0.35) + (locationWeight * 0.25) + (matchCountNorm * 0.25) + (contextWeight * 0.15); } else { matchCountNorm = Math.min(matchCount / 10, 1); contextWeight = (httpsPresent ? 0.3 : 0.8) + (userInteractionRequired ? -0.2 : 0.1) + (isMaliciousURL ? 0.4 : 0); score = (typeWeight * 0.4) + (locationWeight * 0.2) + (matchCountNorm * 0.2) + (contextWeight * 0.2); }
             return Math.round(Math.max(0, Math.min(1, score)) * 100);
         }
     };
@@ -58,18 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
              if (!config || !config.rules) return { score: 50, label: "Orta" };
             const { rules, outputs } = config;
             let totalWeightedScore = 0, totalWeight = 0, finalLabel = "Düşük";
-            rules.forEach(rule => {
-                const score = outputs[rule.then]?.score || 5;
-                totalWeightedScore += score;
-                totalWeight += 1;
-                finalLabel = outputs[rule.then]?.label || "Orta";
-            });
+            rules.forEach(rule => { const score = outputs[rule.then]?.score || 5; totalWeightedScore += score; totalWeight += 1; finalLabel = outputs[rule.then]?.label || "Orta"; });
             if (totalWeight === 0) return { score: 20, label: "Düşük" };
             return { score: Math.round((totalWeightedScore / totalWeight) * 10), label: finalLabel };
         }
     };
-
-    // Ana Mantık ve Arayüz Çizimi
     const generateHybridResults = () => {
         if (!fuzzyLogicConfig || !scoreMethods) return;
         const scoreConfig = scoreMethods.llmModels[selectedModels.scoreMethod];
@@ -83,7 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
             vuln.severity = vuln.fuzzySeverity.toLowerCase().replace('kritik', 'high');
         });
     };
-
     const renderAiSuggestions = (vulns) => {
         if (!aiSuggestions) return;
         if (!vulns || vulns.length === 0) { aiSuggestions.innerHTML = '<p class="muted">Öneri gösterecek bir açık bulunamadı.</p>'; return; }
@@ -98,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         aiSuggestions.innerHTML = Object.keys(suggestionMap).length > 0 ? suggestionsHTML : '<p class="muted">Bu açık türleri için henüz bir öneri tanımlanmadı.</p>';
     };
-
     const showVulnDetails = (vuln) => {
         if (!vuln || !vulnDetails) return;
         const evidenceContent = vuln.evidence ? JSON.stringify(vuln.evidence, null, 2).replace(/</g, "&lt;").replace(/>/g, "&gt;") : 'Kanıt bulunamadı.';
@@ -127,10 +236,9 @@ document.addEventListener('DOMContentLoaded', () => {
         vulnList.style.display = 'none';
         vulnDetails.style.display = 'block';
     };
-
     const renderVulns = () => {
         if (!vulnList) return;
-        if (vulnDetails) vulnDetails.style.display = 'none';
+        vulnDetails.style.display = 'none';
         vulnList.style.display = 'block';
         if (!fuzzyLogicConfig || !scoreMethods) { setStatus("Hata: Değerlendirme modelleri yüklenemedi."); vulnList.innerHTML = `<div class="empty-state"><p>Arka plan betiğinde hata oluştu.</p></div>`; return; }
         generateHybridResults();
@@ -141,15 +249,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const item = document.createElement('div');
             const sevClass = (vuln.severity || 'medium').toLowerCase();
             item.className = `vuln-item severity-${sevClass} clickable`;
-            item.dataset.vulnIndex = index;
+            item.dataset.vulnIndex = index; // Doğrudan index'i kullanalım
             item.innerHTML = `<div class="vuln-header"><span class="vuln-severity ${sevClass}">${vuln.fuzzySeverity || 'Orta'} (${vuln.llmScore || 'N/A'}/100)</span><h4>${vuln.title || 'Bilinmeyen Açık'} (${vuln.type.toUpperCase()})</h4></div><p class="vuln-details">${vuln.details}</p>`;
-            item.addEventListener('click', () => { showVulnDetails(filteredVulns[parseInt(item.dataset.vulnIndex, 10)]); });
+            item.addEventListener('click', () => {
+                showVulnDetails(filteredVulns[parseInt(item.dataset.vulnIndex, 10)]);
+            });
             vulnList.appendChild(item);
         });
         setStatus(`Tarama tamamlandı — ${filteredVulns.length} açık bulundu`);
     };
-
-    // İletişim ve Başlatma
     const startScan = async () => {
         if (isScanning || !fuzzyLogicConfig) return;
         isScanning = true; scanBtn.disabled = true; scanBtn.textContent = 'Taranıyor...'; setStatus('Tarama başlıyor...');
@@ -163,40 +271,21 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.runtime.sendMessage({ action: 'vulnerabilitiesDetected', vulnerabilities: currentVulns });
         } catch (error) { console.error('Tarama hatası:', error.message); setStatus(`Tarama hatası.`); currentVulns = []; } finally { isScanning = false; scanBtn.disabled = false; scanBtn.textContent = 'Sayfayı Tara'; renderVulns(); }
     };
-
     const loadInitialData = async () => {
         try {
             const [fuzzyRes, scoreRes, vulnsRes] = await Promise.all([ chrome.runtime.sendMessage({ action: "getFuzzyLogic" }), chrome.runtime.sendMessage({ action: "getScoreMethods" }), chrome.runtime.sendMessage({ action: "getVulns" }) ]);
             if (fuzzyRes?.error) throw new Error(fuzzyRes.error); if (scoreRes?.error) throw new Error(scoreRes.error);
             fuzzyLogicConfig = fuzzyRes?.fuzzyLogic; scoreMethods = scoreRes?.scoreMethods; currentVulns = vulnsRes?.vulnerabilities || [];
-            
             if (fuzzyLogicConfig && scoreMethods) {
-                // Her menüyü temizle
-                scoreMethodSelect.innerHTML = '';
-                fuzzyLogicSelect.innerHTML = '';
-                
-                // Score Method menüsünü doldur
-                Object.keys(scoreMethods.llmModels).forEach(key => scoreMethodSelect.add(new Option(key.toUpperCase(), key)));
+                Object.keys(fuzzyLogicConfig.llmModels).forEach(key => scoreMethodSelect.add(new Option(key.toUpperCase(), key)));
                 scoreMethodSelect.value = selectedModels.scoreMethod;
-
-                // Fuzzy Logic menüsünü DOĞRU veriyle doldur
-                Object.keys(fuzzyLogicConfig.llmModels).forEach(key => fuzzyLogicSelect.add(new Option(key.toUpperCase(), key)));
+                Object.keys(scoreMethods.llmModels).forEach(key => scoreMethodSelect.add(new Option(key.toUpperCase(), key)));
                 fuzzyLogicSelect.value = selectedModels.fuzzyLogic;
-                
                 scanBtn.disabled = false;
-            } else { 
-                throw new Error("Yapılandırma dosyaları boş veya hatalı geldi."); 
-            }
-        } catch (error) { 
-            console.error("Başlangıç verileri yüklenemedi:", error.message); 
-            setStatus(`Hata: ${error.message}`); 
-            scanBtn.disabled = true; 
-        } finally { 
-            renderVulns(); 
-        }
+            } else { throw new Error("Yapılandırma dosyaları boş veya hatalı geldi."); }
+        } catch (error) { console.error("Başlangıç verileri yüklenemedi:", error.message); setStatus(`Hata: ${error.message}`); scanBtn.disabled = true; } finally { renderVulns(); }
     };
 
-    // Olay Dinleyicileri ve İlk Yükleme
     scanBtn.disabled = true;
     scanBtn.addEventListener('click', startScan);
     scoreMethodSelect.addEventListener('change', () => { selectedModels.scoreMethod = scoreMethodSelect.value; renderVulns(); });
@@ -217,7 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', () => {
             if (currentVulns.length === 0) { alert("Dışa aktarılacak bir zafiyet bulunamadı."); return; }
-            downloadFile(JSON.stringify(currentVulns, null, 2), 'vulnerabilities.json', 'application/json');
+            const jsonData = JSON.stringify(currentVulns, null, 2);
+            downloadFile(jsonData, 'vulnerabilities.json', 'application/json');
         });
     }
     if (exportCsvBtn) {

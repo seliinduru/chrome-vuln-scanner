@@ -1,8 +1,10 @@
-// popup.js - MENÜ HATASI DÜZELTİLMİŞ NİHAİ VERSİYON
+// popup.js - ZAMANLAMA HATASI DÜZELTİLMİŞ VE DIŞA AKTARMA EKLENMİŞ NİHAİ VERSİYON
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // Global Değişkenler ve DOM Elementleri
+    // =========================================================================
+    // GLOBAL STATE & DOM ELEMENTS
+    // =========================================================================
     let currentVulns = [];
     let currentFilter = 'all';
     let selectedModels = { scoreMethod: 'gpt', fuzzyLogic: 'gpt' };
@@ -18,14 +20,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const aiSuggestions = document.getElementById('aiSuggestions');
     const exportJsonBtn = document.getElementById('exportJson');
     const exportCsvBtn = document.getElementById('exportCsv');
-    const vulnDetails = document.getElementById('vulnDetails');
 
-    // Yardımcı Fonksiyonlar
+    // =========================================================================
+    // HELPER FUNCTIONS
+    // =========================================================================
     const setStatus = (message) => { if (statusText) statusText.textContent = message; };
     const filterVulns = (vulns) => { if (currentFilter === 'all') return vulns; return vulns.filter(v => (v.severity || 'medium').toLowerCase() === currentFilter); };
-    const downloadFile = (content, fileName, contentType) => { const a = document.createElement("a"); const file = new Blob([content], { type: contentType }); a.href = URL.createObjectURL(file); a.download = fileName; a.click(); URL.revokeObjectURL(a.href); };
+    
+    const downloadFile = (content, fileName, contentType) => {
+        const a = document.createElement("a");
+        const file = new Blob([content], { type: contentType });
+        a.href = URL.createObjectURL(file);
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    };
 
-    // Skorlama ve Değerlendirme Motorları
+    // =========================================================================
+    // SCORE & FUZZY LOGIC ENGINES
+    // =========================================================================
     const ScoreCalculator = {
         calculateScore: (vuln, config, modelName) => {
             if (!config || !config.typeWeights) return 50;
@@ -69,7 +82,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Ana Mantık ve Arayüz Çizimi
+    // =========================================================================
+    // CORE LOGIC & RENDERING
+    // =========================================================================
     const generateHybridResults = () => {
         if (!fuzzyLogicConfig || !scoreMethods) return;
         const scoreConfig = scoreMethods.llmModels[selectedModels.scoreMethod];
@@ -86,73 +101,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const renderAiSuggestions = (vulns) => {
         if (!aiSuggestions) return;
-        if (!vulns || vulns.length === 0) { aiSuggestions.innerHTML = '<p class="muted">Öneri gösterecek bir açık bulunamadı.</p>'; return; }
-        let suggestionsHTML = '<h3>Önerilen Çözümler</h3>'; const suggestionMap = {};
+        if (!vulns || vulns.length === 0) {
+            aiSuggestions.innerHTML = '<p class="muted">Öneri gösterecek bir açık bulunamadı.</p>';
+            return;
+        }
+        let suggestionsHTML = '<h3>Önerilen Çözümler</h3>';
+        const suggestionMap = {};
         vulns.forEach(vuln => {
             if (suggestionMap[vuln.type]) return;
             switch (vuln.type) {
-                case 'xss': suggestionsHTML += `<div class="ai-advice"><h4>XSS Zafiyetleri İçin</h4><p>Kullanıcıdan gelen verileri DOM'a yazdırırken <strong>textContent</strong> kullanın...</p></div>`; suggestionMap.xss = true; break;
-                case 'csp': suggestionsHTML += `<div class="ai-advice"><h4>CSP Eksikliği İçin</h4><p>HTTP başlıklarına katı bir <strong>Content-Security-Policy</strong> ekleyin...</p></div>`; suggestionMap.csp = true; break;
-                case 'csrf': case 'cookie': suggestionsHTML += `<div class="ai-advice"><h4>Cookie & CSRF Güvenliği</h4><p>Tüm oturum cookielerinin <strong>HttpOnly</strong>, <strong>Secure</strong> ve <strong>SameSite=Lax/Strict</strong> bayraklarına sahip olduğundan emin olun...</p></div>`; suggestionMap.csrf = true; suggestionMap.cookie = true; break;
+                case 'xss':
+                    suggestionsHTML += `<div class="ai-advice"><h4>XSS Zafiyetleri İçin</h4><p>Kullanıcıdan gelen verileri DOM'a yazdırırken <strong>textContent</strong> kullanın...</p></div>`;
+                    suggestionMap.xss = true;
+                    break;
+                case 'csp':
+                    suggestionsHTML += `<div class="ai-advice"><h4>CSP Eksikliği İçin</h4><p>HTTP başlıklarına katı bir <strong>Content-Security-Policy</strong> ekleyin...</p></div>`;
+                    suggestionMap.csp = true;
+                    break;
+                case 'csrf': case 'cookie':
+                    suggestionsHTML += `<div class="ai-advice"><h4>Cookie & CSRF Güvenliği</h4><p>Tüm oturum cookielerinin <strong>HttpOnly</strong>, <strong>Secure</strong> ve <strong>SameSite=Lax/Strict</strong> bayraklarına sahip olduğundan emin olun...</p></div>`;
+                    suggestionMap.csrf = true; suggestionMap.cookie = true;
+                    break;
             }
         });
         aiSuggestions.innerHTML = Object.keys(suggestionMap).length > 0 ? suggestionsHTML : '<p class="muted">Bu açık türleri için henüz bir öneri tanımlanmadı.</p>';
     };
 
-    const showVulnDetails = (vuln) => {
-        if (!vuln || !vulnDetails) return;
-        const evidenceContent = vuln.evidence ? JSON.stringify(vuln.evidence, null, 2).replace(/</g, "&lt;").replace(/>/g, "&gt;") : 'Kanıt bulunamadı.';
-        vulnDetails.innerHTML = `
-            <div class="card detail-card">
-                <button id="backToListBtn" class="back-button">← Sonuçlara Geri Dön</button>
-                <div class="vuln-header">
-                    <span class="vuln-severity severity-${vuln.severity}">${vuln.fuzzySeverity} (${vuln.llmScore}/100)</span>
-                    <h4>${vuln.title}</h4>
-                </div>
-                <p class="detail-description">${vuln.details}</p>
-                <h5>Risk Faktörleri</h5>
-                <ul class="detail-factors">
-                    <li><strong>Zafiyet Türü:</strong> ${vuln.type.toUpperCase()}</li>
-                    <li><strong>Bulunduğu Yer:</strong> ${vuln.location}</li>
-                    <li><strong>Tespit Sayısı:</strong> ${vuln.matchCount}</li>
-                </ul>
-                <h5>Teknik Kanıt (Evidence)</h5>
-                <pre class="detail-evidence">${evidenceContent}</pre>
-            </div>
-        `;
-        document.getElementById('backToListBtn').addEventListener('click', () => {
-            vulnList.style.display = 'block';
-            vulnDetails.style.display = 'none';
-        });
-        vulnList.style.display = 'none';
-        vulnDetails.style.display = 'block';
-    };
-
     const renderVulns = () => {
         if (!vulnList) return;
-        if (vulnDetails) vulnDetails.style.display = 'none';
-        vulnList.style.display = 'block';
-        if (!fuzzyLogicConfig || !scoreMethods) { setStatus("Hata: Değerlendirme modelleri yüklenemedi."); vulnList.innerHTML = `<div class="empty-state"><p>Arka plan betiğinde hata oluştu.</p></div>`; return; }
+        if (!fuzzyLogicConfig || !scoreMethods) {
+            setStatus("Hata: Değerlendirme modelleri yüklenemedi.");
+            vulnList.innerHTML = `<div class="empty-state"><p>Arka plan betiğinde hata oluştu. Service Worker konsolunu kontrol edin.</p></div>`;
+            return;
+        }
         generateHybridResults();
         const filteredVulns = filterVulns(currentVulns);
         vulnList.innerHTML = '';
-        if (filteredVulns.length === 0) { vulnList.innerHTML = '<div class="empty-state"><p>Tarama sonucu bulunamadı.</p></div>'; setStatus(`Kullanıma hazır.`); return; }
-        filteredVulns.forEach((vuln, index) => {
+        if (filteredVulns.length === 0) {
+            vulnList.innerHTML = '<div class="empty-state"><p>Tarama sonucu bulunamadı.</p></div>';
+            setStatus(`Kullanıma hazır.`);
+            return;
+        }
+        filteredVulns.forEach(vuln => {
             const item = document.createElement('div');
             const sevClass = (vuln.severity || 'medium').toLowerCase();
-            item.className = `vuln-item severity-${sevClass} clickable`;
-            item.dataset.vulnIndex = index;
-            item.innerHTML = `<div class="vuln-header"><span class="vuln-severity ${sevClass}">${vuln.fuzzySeverity || 'Orta'} (${vuln.llmScore || 'N/A'}/100)</span><h4>${vuln.title || 'Bilinmeyen Açık'} (${vuln.type.toUpperCase()})</h4></div><p class="vuln-details">${vuln.details}</p>`;
-            item.addEventListener('click', () => { showVulnDetails(filteredVulns[parseInt(item.dataset.vulnIndex, 10)]); });
+            item.className = `vuln-item severity-${sevClass}`;
+            item.innerHTML = `
+                <div class="vuln-header">
+                    <span class="vuln-severity ${sevClass}">${vuln.fuzzySeverity || 'Orta'} (${vuln.llmScore || 'N/A'}/100)</span>
+                    <h4>${vuln.title || 'Bilinmeyen Açık'} (${vuln.type.toUpperCase()})</h4>
+                </div>
+                <p class="vuln-details">${vuln.details}</p>`;
             vulnList.appendChild(item);
         });
         setStatus(`Tarama tamamlandı — ${filteredVulns.length} açık bulundu`);
     };
 
-    // İletişim ve Başlatma
+    // =========================================================================
+    // COMMUNICATION & INITIALIZATION
+    // =========================================================================
     const startScan = async () => {
         if (isScanning || !fuzzyLogicConfig) return;
-        isScanning = true; scanBtn.disabled = true; scanBtn.textContent = 'Taranıyor...'; setStatus('Tarama başlıyor...');
+        isScanning = true;
+        scanBtn.disabled = true;
+        scanBtn.textContent = 'Taranıyor...';
+        setStatus('Tarama başlıyor...');
         try {
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
             if (!tab || !tab.id) throw new Error("Aktif sekme bulunamadı.");
@@ -161,76 +174,113 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await chrome.tabs.sendMessage(tab.id, { action: 'scanPage' });
             currentVulns = response?.vulnerabilities || [];
             chrome.runtime.sendMessage({ action: 'vulnerabilitiesDetected', vulnerabilities: currentVulns });
-        } catch (error) { console.error('Tarama hatası:', error.message); setStatus(`Tarama hatası.`); currentVulns = []; } finally { isScanning = false; scanBtn.disabled = false; scanBtn.textContent = 'Sayfayı Tara'; renderVulns(); }
+        } catch (error) {
+            console.error('Tarama hatası:', error.message);
+            setStatus(`Tarama hatası.`);
+            currentVulns = [];
+        } finally {
+            isScanning = false;
+            scanBtn.disabled = false;
+            scanBtn.textContent = 'Sayfayı Tara';
+            renderVulns();
+        }
     };
 
     const loadInitialData = async () => {
         try {
-            const [fuzzyRes, scoreRes, vulnsRes] = await Promise.all([ chrome.runtime.sendMessage({ action: "getFuzzyLogic" }), chrome.runtime.sendMessage({ action: "getScoreMethods" }), chrome.runtime.sendMessage({ action: "getVulns" }) ]);
-            if (fuzzyRes?.error) throw new Error(fuzzyRes.error); if (scoreRes?.error) throw new Error(scoreRes.error);
-            fuzzyLogicConfig = fuzzyRes?.fuzzyLogic; scoreMethods = scoreRes?.scoreMethods; currentVulns = vulnsRes?.vulnerabilities || [];
-            
+            const [fuzzyRes, scoreRes, vulnsRes] = await Promise.all([
+                chrome.runtime.sendMessage({ action: "getFuzzyLogic" }),
+                chrome.runtime.sendMessage({ action: "getScoreMethods" }),
+                chrome.runtime.sendMessage({ action: "getVulns" })
+            ]);
+            if (fuzzyRes?.error) throw new Error(fuzzyRes.error);
+            if (scoreRes?.error) throw new Error(scoreRes.error);
+            fuzzyLogicConfig = fuzzyRes?.fuzzyLogic;
+            scoreMethods = scoreRes?.scoreMethods;
+            currentVulns = vulnsRes?.vulnerabilities || [];
             if (fuzzyLogicConfig && scoreMethods) {
-                // Her menüyü temizle
-                scoreMethodSelect.innerHTML = '';
-                fuzzyLogicSelect.innerHTML = '';
-                
-                // Score Method menüsünü doldur
-                Object.keys(scoreMethods.llmModels).forEach(key => scoreMethodSelect.add(new Option(key.toUpperCase(), key)));
+                Object.keys(fuzzyLogicConfig.llmModels).forEach(key => scoreMethodSelect.add(new Option(key.toUpperCase(), key)));
                 scoreMethodSelect.value = selectedModels.scoreMethod;
-
-                // Fuzzy Logic menüsünü DOĞRU veriyle doldur
-                Object.keys(fuzzyLogicConfig.llmModels).forEach(key => fuzzyLogicSelect.add(new Option(key.toUpperCase(), key)));
+                Object.keys(scoreMethods.llmModels).forEach(key => fuzzyLogicSelect.add(new Option(key.toUpperCase(), key)));
                 fuzzyLogicSelect.value = selectedModels.fuzzyLogic;
-                
                 scanBtn.disabled = false;
-            } else { 
-                throw new Error("Yapılandırma dosyaları boş veya hatalı geldi."); 
+            } else {
+                throw new Error("Yapılandırma dosyaları boş veya hatalı geldi.");
             }
-        } catch (error) { 
-            console.error("Başlangıç verileri yüklenemedi:", error.message); 
-            setStatus(`Hata: ${error.message}`); 
-            scanBtn.disabled = true; 
-        } finally { 
-            renderVulns(); 
+        } catch (error) {
+            console.error("Başlangıç verileri yüklenemedi:", error.message);
+            setStatus(`Hata: ${error.message}`);
+            scanBtn.disabled = true;
+        } finally {
+            renderVulns();
         }
     };
 
-    // Olay Dinleyicileri ve İlk Yükleme
+    // =========================================================================
+    // EVENT LISTENERS & INITIAL LOAD
+    // =========================================================================
     scanBtn.disabled = true;
     scanBtn.addEventListener('click', startScan);
     scoreMethodSelect.addEventListener('change', () => { selectedModels.scoreMethod = scoreMethodSelect.value; renderVulns(); });
     fuzzyLogicSelect.addEventListener('change', () => { selectedModels.fuzzyLogic = fuzzyLogicSelect.value; renderVulns(); });
+    
     document.querySelectorAll('.filter').forEach(btn => {
-        btn.addEventListener('click', () => { document.querySelector('.filter.active')?.classList.remove('active'); btn.classList.add('active'); currentFilter = btn.dataset.sev; renderVulns(); });
+        btn.addEventListener('click', () => {
+            document.querySelector('.filter.active')?.classList.remove('active');
+            btn.classList.add('active');
+            currentFilter = btn.dataset.sev;
+            renderVulns();
+        });
     });
+
     document.querySelectorAll('.tab').forEach(tabButton => {
         tabButton.addEventListener('click', (event) => {
             const clickedTabId = event.currentTarget.dataset.tab;
-            if (clickedTabId === 'settings') { window.location.href = 'settings.html'; return; }
+            if (clickedTabId === 'settings') {
+                window.location.href = 'settings.html';
+                return; 
+            }
             document.querySelectorAll('.tab.active, .tab-content.active').forEach(el => el.classList.remove('active'));
             event.currentTarget.classList.add('active');
             document.getElementById(clickedTabId)?.classList.add('active');
-            if (clickedTabId === 'ai') { renderAiSuggestions(currentVulns); }
+            if (clickedTabId === 'ai') {
+                renderAiSuggestions(currentVulns);
+            }
         });
     });
+    
     if (exportJsonBtn) {
         exportJsonBtn.addEventListener('click', () => {
-            if (currentVulns.length === 0) { alert("Dışa aktarılacak bir zafiyet bulunamadı."); return; }
-            downloadFile(JSON.stringify(currentVulns, null, 2), 'vulnerabilities.json', 'application/json');
+            if (currentVulns.length === 0) {
+                alert("Dışa aktarılacak bir zafiyet bulunamadı.");
+                return;
+            }
+            const jsonData = JSON.stringify(currentVulns, null, 2);
+            downloadFile(jsonData, 'vulnerabilities.json', 'application/json');
         });
     }
+
     if (exportCsvBtn) {
         exportCsvBtn.addEventListener('click', () => {
-            if (currentVulns.length === 0) { alert("Dışa aktarılacak bir zafiyet bulunamadı."); return; }
+            if (currentVulns.length === 0) {
+                alert("Dışa aktarılacak bir zafiyet bulunamadı.");
+                return;
+            }
             const headers = ['severity', 'score', 'title', 'type', 'details'];
             let csvContent = headers.join(',') + '\r\n';
             currentVulns.forEach(vuln => {
-                const row = [ vuln.fuzzySeverity || 'N/A', vuln.llmScore || 'N/A', `"${(vuln.title || '').replace(/"/g, '""')}"`, vuln.type || 'N/A', `"${(vuln.details || '').replace(/"/g, '""')}"` ];
+                const row = [
+                    vuln.fuzzySeverity || 'N/A',
+                    vuln.llmScore || 'N/A',
+                    `"${(vuln.title || '').replace(/"/g, '""')}"`,
+                    vuln.type || 'N/A',
+                    `"${(vuln.details || '').replace(/"/g, '""')}"`
+                ];
                 csvContent += row.join(',') + '\r\n';
             });
             downloadFile(csvContent, 'vulnerabilities.csv', 'text/csv;charset=utf-8;');
         });
     }
+
     loadInitialData();
 });

@@ -1,20 +1,34 @@
 // settings.js
 // Ayarlar sayfası için JavaScript kodları
 
+// DOM elementini global olarak al
+const statusTextSpan = document.getElementById('statusText');
+
+// Helper: Durum mesajını ayarla
+function setStatus(text) {
+  // Eğer element yüklendiyse (null değilse) metni değiştir.
+  if (statusTextSpan) {
+    statusTextSpan.textContent = text;
+  }
+}
+
 // Sayfa yüklendiğinde mevcut ayarları yükle
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   
   // Geri dönüş butonu
-  document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('backBtn')?.addEventListener('click', () => {
     window.location.href = 'popup.html';
   });
   
   // Ayarları kaydet butonu
-  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+  document.getElementById('saveSettingsBtn')?.addEventListener('click', saveSettings);
   
   // Ayarları sıfırla butonu
-  document.getElementById('resetSettingsBtn').addEventListener('click', resetSettings);
+  document.getElementById('resetSettingsBtn')?.addEventListener('click', resetSettings);
+  
+  // İlk yükleme durumunu ayarla
+  setStatus('Ayarlar');
 });
 
 // Mevcut ayarları yükle
@@ -32,7 +46,7 @@ function loadSettings() {
       checkbox.checked = settings.vulnTypes.includes(checkbox.value);
     });
     
-    // Tarama seçenekleri (settings.html'de yok, ancak kodda tutuldu)
+    // Tarama seçenekleri
     document.querySelectorAll('input[name="scanOption"]').forEach(checkbox => {
       checkbox.checked = settings.scanOptions.includes(checkbox.value);
     });
@@ -64,9 +78,9 @@ function saveSettings() {
   
   // Ayarları kaydet
   chrome.storage.local.set({ scannerSettings: settings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar kaydedildi';
+    setStatus('Ayarlar kaydedildi');
     setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
+      setStatus('Ayarlar');
     }, 2000);
   });
 }
@@ -101,9 +115,9 @@ function resetSettings() {
   
   // Ayarları kaydet
   chrome.storage.local.set({ scannerSettings: defaultSettings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar sıfırlandı';
+    setStatus('Ayarlar sıfırlandı');
     setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
+      setStatus('Ayarlar');
     }, 2000);
   });
 }

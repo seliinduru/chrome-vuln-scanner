@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Çözüm Önerileri</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="modal">
+    <header class="modal-header">
+      <h1>AI Çözüm Önerileri</h1>
+      <button id="backBtn" class="back-button">← Geri Dön</button>
+    </header>
+
+    <div id="aiSuggestionsContainer" class="content-container">
+      <div class="card">
+        <div id="aiSuggestions">
+          <p class="muted">Öneriler için önce bir tarama yapmalısınız.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="modal-footer">
+      <small>Web Güvenlik Tarayıcısı — <span id="statusText">Öneriler</span></small>
+    </footer>
+  </div>
+
+  <script src="ai.js"></script>
+</body>
+</html>

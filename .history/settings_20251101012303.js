@@ -32,7 +32,7 @@ function loadSettings() {
       checkbox.checked = settings.vulnTypes.includes(checkbox.value);
     });
     
-    // Tarama seçenekleri (settings.html'de yok, ancak kodda tutuldu)
+    // Tarama seçenekleri
     document.querySelectorAll('input[name="scanOption"]').forEach(checkbox => {
       checkbox.checked = settings.scanOptions.includes(checkbox.value);
     });

@@ -1,0 +1,528 @@
+/* styles.css - popup görünümü */
+:root{
+  --bg:#f6f8fa;
+  --card:#ffffff;
+  --accent:#1673ff;
+  --muted:#8b96a8;
+  --radius:10px;
+  --shadow: 0 6px 18px rgba(23,35,60,0.08);
+  --pill-border: #e6eefc;
+  --transition: all 0.3s ease;
+}
+
+*{box-sizing:border-box;font-family:Inter, "Segoe UI", Roboto, Arial, sans-serif;}
+body{
+  margin:0;
+  background:transparent;
+  color:#263238;
+  width:420px;
+  height:560px;
+}
+
+.modal{
+  background:var(--bg);
+  border-radius:12px;
+  padding:16px;
+  box-shadow:var(--shadow);
+  height:100%;
+}
+
+.modal-header h1{
+  margin:0;
+  color:var(--accent);
+  font-size:20px;
+  text-align:center;
+  font-weight:700;
+}
+
+.tabs{
+  display:flex;
+  gap:8px;
+  margin-top:12px;
+  align-items:center;
+  justify-content:flex-start;
+}
+
+.tab{
+  background:transparent;
+  border:0;
+  padding:8px 12px;
+  border-radius:20px;
+  cursor:pointer;
+  color:var(--muted);
+  font-weight:600;
+}
+.tab.active{
+  background:#fff;
+  color:var(--accent);
+  box-shadow: var(--shadow);
+}
+
+.controls{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  align-items:center;
+}
+
+button.primary{
+  background:var(--accent);
+  color:#fff;
+  border:0;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
+button.secondary{
+  background:#eef3f9;
+  color:#333;
+  border:0;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.card{
+  background:var(--card);
+  border-radius:12px;
+  padding:16px;
+  margin-top:16px;
+  box-shadow: var(--shadow);
+}
+
+.card-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.card-title h2{ margin:0; font-size:16px; color:#223044;}
+.export-buttons button{
+  background:#f5f7fb;
+  border:1px solid var(--pill-border);
+  padding:6px 10px;
+  border-radius:8px;
+  cursor:pointer;
+  margin-left:6px;
+  font-weight:600;
+}
+
+.filters{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-top:12px;
+  color:var(--muted);
+  font-size:13px;
+}
+.filter-buttons{ display:flex; gap:8px; }
+.filter{
+  border:1px solid var(--pill-border);
+  background:#fff;
+  padding:6px 10px;
+  border-radius:18px;
+  cursor:pointer;
+  font-weight:600;
+  color:#5a6b7a;
+}
+.filter.active{
+  background:#eaf3ff;
+  color:var(--accent);
+  border-color: rgba(22,115,255,0.18);
+}
+
+/* vulnerabilities list */
+.vuln-list{
+  margin-top:14px;
+  min-height:160px;
+  max-height:300px;
+  overflow:auto;
+  padding:8px;
+}
+.empty-state{
+  border:1px dashed #f0f3f7;
+  border-radius:8px;
+  padding:26px;
+  text-align:center;
+  color:var(--muted);
+  background:linear-gradient(180deg, rgba(255,255,255,0.6), #fff);
+}
+
+.vuln-items{ display:flex; flex-direction:column; gap:10px; padding:4px; }
+.vuln-item{
+  background:#fbfdff;
+  border-radius:10px;
+  padding:10px;
+  border:1px solid #f0f4fb;
+  box-shadow: 0 2px 8px rgba(34,50,80,0.03);
+  position:relative;
+}
+.vuln-title{ font-weight:700; margin-top:6px; color:#142231; }
+.vuln-details{ margin-top:6px; color:#425563; font-size:13px; white-space:pre-wrap; }
+.vuln-meta{ margin-top:8px; color:#7b8b98; font-size:12px; }
+
+.sev{
+  position:absolute;
+  right:10px;
+  top:10px;
+  padding:4px 8px;
+  border-radius:12px;
+  font-weight:700;
+  font-size:12px;
+}
+.sev.high{ background:#fff5f6; color:#b00020; border:1px solid #ffd6da; }
+.sev.medium{ background:#fff8ec; color:#b36b00; border:1px solid #ffe6b7; }
+.sev.low{ background:#f6fff3; color:#1b7a2f; border:1px solid #d7f7d7; }
+
+.evidence-btn{
+  margin-top:8px;
+  border:0;
+  background:#eef3ff;
+  padding:6px 8px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:700;
+}
+.evidence-panel{
+  display:none;
+  margin-top:8px;
+  padding:10px;
+  border-radius:8px;
+  background:#0f1720/04;
+  white-space:pre-wrap;
+  max-height:160px;
+  overflow:auto;
+}
+.evidence-panel.visible{ display:block; }
+
+.modal-footer{
+  margin-top:auto;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+
+/* Ayarlar Sayfası Stilleri */
+.back-button {
+  position: absolute;
+  top: 40px; /* önce 16px'ti, biraz aşağı alındı */
+  left: 16px;
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+
+.modal-header {
+  position: relative;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.back-button:hover {
+  background: rgba(22, 115, 255, 0.1);
+}
+
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 10px 0;
+  overflow-y: auto;
+  max-height: calc(100% - 120px);
+}
+
+.settings-section {
+  margin-bottom: 20px;
+  padding: 0 15px;
+}
+
+.settings-section h3 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.filter-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.filter-options input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.settings-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 0 15px 15px;
+}
+
+.settings-actions button {
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+#resetSettingsBtn {
+  background: transparent;
+  border: 1px solid var(--muted);
+  color: var(--muted);
+}
+
+#resetSettingsBtn:hover {
+  background: rgba(139, 150, 168, 0.1);
+}
+.muted{ color:var(--muted); }
+.small{ font-size:12px; }
+
+/* === Rapor formatı seçimi (JSON / CSV) === */
+.export-text {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.export-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.export-buttons button {
+  background: #f5f7fb;
+  border: 1px solid var(--pill-border);
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  color: #223044;
+  transition: all 0.2s ease;
+}
+
+/* Hover durumları */
+.export-buttons button:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+/* JSON ve CSV için özel renk varyasyonu (isteğe bağlı) */
+#exportJson:hover {
+  background: #2563eb; /* mavi ton */
+}
+
+#exportCsv:hover {
+  background: #10b981; /* yeşil ton */
+}
+
+/* ===== HIBRIT SONUÇLAR PANELİ ===== */
+.hybrid-results-panel {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e8ecf1;
+}
+
+.hybrid-panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #263238;
+  margin-bottom: 8px;
+}
+
+.hybrid-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.hybrid-cell {
+  background: #f8fafb;
+  border: 1px solid #e6eefc;
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.hybrid-cell:hover {
+  background: #eef3ff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 6px rgba(22, 115, 255, 0.1);
+}
+
+.cell-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #5a6b7a;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.cell-result {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.result-label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.result-score {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.hybrid-cell.critical .result-label { color: #b00020; }
+.hybrid-cell.critical .result-score { color: #b00020; }
+.hybrid-cell.critical {
+  background: #fff5f6;
+  border-color: #ffd6da;
+}
+
+.hybrid-cell.high .result-label { color: #b36b00; }
+.hybrid-cell.high .result-score { color: #b36b00; }
+.hybrid-cell.high {
+  background: #fff8ec;
+  border-color: #ffe6b7;
+}
+
+.hybrid-cell.medium .result-label { color: #1b7a2f; }
+.hybrid-cell.medium .result-score { color: #1b7a2f; }
+.hybrid-cell.medium {
+  background: #f6fff3;
+  border-color: #d7f7d7;
+}
+
+/* ===== MODEL SEÇİCİ =====  */
+.model-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafb;
+  border-radius: 8px;
+}
+
+.model-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.model-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a6b7a;
+  text-transform: uppercase;
+}
+
+.model-group select {
+  padding: 8px;
+  border: 1px solid #e6eefc;
+  border-radius: 6px;
+  background: #fff;
+  color: #263238;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.model-group select:hover {
+  border-color: var(--accent);
+  background: #eef3ff;
+}
+
+.model-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 115, 255, 0.1);
+}
+
+/* ===== SEÇİLİ MODEL SONUÇLARI ===== */
+.hybrid-results-container {
+  padding: 12px;
+  background: #f8fafb;
+  border-radius: 8px;
+  border: 1px solid #e6eefc;
+}
+
+.hybrid-result-card {
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-left: 4px solid;
+}
+
+.hybrid-result-card.critical {
+  background: #fff5f6;
+  border-left-color: #b00020;
+}
+
+.hybrid-result-card.high {
+  background: #fff8ec;
+  border-left-color: #b36b00;
+}
+
+.hybrid-result-card.medium {
+  background: #f6fff3;
+  border-left-color: #1b7a2f;
+}
+
+.result-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.result-model {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #7b8b98;
+}
+
+.result-label {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.result-score {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hybrid-result-card.critical .result-label,
+.hybrid-result-card.critical .result-score { color: #b00020; }
+
+.hybrid-result-card.high .result-label,
+.hybrid-result-card.high .result-score { color: #b36b00; }
+
+.hybrid-result-card.medium .result-label,
+.hybrid-result-card.medium .result-score { color: #1b7a2f; }
