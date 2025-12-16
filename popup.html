@@ -6,12 +6,35 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- YASAL UYARI / ONAY MODALI -->
+  <div id="consentModal" class="modal-overlay">
+    <div class="consent-card">
+      <h2>⚠️ Yasal Uyarı ve Kullanım Koşulları</h2>
+      <div class="consent-content">
+        <p>Bu yazılım ("Web Güvenlik Tarayıcısı"), yalnızca <strong>yetkili olduğunuz</strong> veya <strong>kendi sahipliğinizdeki</strong> web sitelerinde güvenlik testi yapmak amacıyla geliştirilmiştir.</p>
+        <p>Başkalarına ait sistemlerde izinsiz tarama yapmak, veri toplamak veya zarar vermek yasalara aykırıdır ve ciddi suç teşkil edebilir.</p>
+        <p><strong>Kullanıcı Beyanı:</strong></p>
+        <ul>
+          <li>Bu aracı yalnızca yasalara uygun şekilde kullanacağımı,</li>
+          <li>İzinsiz hiçbir sisteme müdahale etmeyeceğimi,</li>
+          <li>Doğabilecek tüm yasal ve cezai sorumluluğun şahsıma ait olduğunu,</li>
+          <li>Geliştiricinin herhangi bir sorumluluğu bulunmadığını</li>
+        </ul>
+        <p>kabul ve beyan ederim.</p>
+      </div>
+      <div class="consent-actions">
+        <button id="declineConsent" class="secondary">Reddet (Çıkış)</button>
+        <button id="acceptConsent" class="primary">Okudum, Kabul Ediyorum</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal">
     <header class="modal-header">
       <h1>Web Güvenlik Tarayıcısı</h1>
     </header>
 
-    <nav class="tabs">
+    <nav class="tabs" id="main-header" style="display: none;">
       <button class="tab active" data-tab="results">Sonuçlar</button>
       <button class="tab" data-tab="ai">AI Çözüm Önerileri</button>
       <button class="tab" data-tab="settings">Ayarlar</button>
@@ -21,68 +44,202 @@
     <div class="main-content">
 
       <!-- =================================================================== -->
-      <!-- === SONUÇLAR SEKMESİ İÇERİĞİ === -->
+      <!-- === VIEW 1: HOME (BAŞLANGIÇ) === -->
       <!-- =================================================================== -->
-      <section id="results" class="tab-content active">
-        <div class="controls">
-          <button id="scanBtn" class="primary">Sayfayı Tara</button>
-        </div>
-        <div class="card">
-          <div class="card-title">
-            <h2>Tespit Edilen Açıklar</h2>
-            <div class="export-buttons">
-              <button id="exportJson" title="JSON">JSON</button>
-              <button id="exportCsv" title="CSV">CSV</button>
-            </div>
+      <section id="view-home" class="view-section active">
+        <div class="home-hero">
+          <h2>Güvenlik Tarayıcısı</h2>
+          <p>Yapay zeka destekli, dinamik ve kapsamlı web güvenlik analizi.</p>
+          <div class="home-actions" style="display: flex; gap: 10px; justify-content: center;">
+            <button id="startAgentScanBtn" class="big-start-btn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Taramayı Başlat
+            </button>
+            <button id="openSettingsBtn" class="secondary" style="padding: 16px; border-radius: 50px; background: #f1f5f9; border: 1px solid #e2e8f0; color: #64748b; transition: all 0.2s ease;" title="Ayarlar">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+               </svg>
+            </button>
           </div>
         </div>
-        <div class="card">
-          <h3>🔧 Değerlendirme Modelleri</h3>
-          <div class="model-selector">
-            <div class="model-group">
-              <label>Score Method:</label>
-              <select id="scoreMethodSelect"></select>
-            </div>
-            <div class="model-group">
-              <label>Fuzzy Logic:</label>
-              <select id="fuzzyLogicSelect"></select>
-            </div>
+        <div class="history-section">
+          <h3>Geçmiş Taramalar</h3>
+          <div id="historyList" class="history-list">
+            <!-- JS ile doldurulacak -->
+            <div class="empty-state" style="padding: 20px;">Geçmiş tarama bulunamadı.</div>
           </div>
         </div>
-        <div class="filters">
-          <span>Filtrele:</span>
-          <div class="filter-buttons">
-            <button class="filter active" data-sev="all">Tümü</button>
-            <button class="filter" data-sev="high">Yüksek</button>
-            <button class="filter" data-sev="medium">Orta</button>
-            <button class="filter" data-sev="low">Düşük</button>
-          </div>
-        </div>
-        
-        <!-- YENİ: Liste ve Detayları içeren Konteyner -->
-        <div id="resultsContainer">
-          <!-- Zafiyet Listesi -->
-          <div id="vulnList" class="vuln-list">
-            <div class="empty-state">
-              <p>Henüz tarama yapılmadı.</p>
-            </div>
-          </div>
-          <!-- Zafiyet Detayları (Başlangıçta Gizli) -->
-          <div id="vulnDetails" style="display: none;">
-            <!-- Detay içeriği JS tarafından eklenecek -->
-          </div>
-        </div>
-
       </section>
 
       <!-- =================================================================== -->
-      <!-- === AI ÇÖZÜM ÖNERİLERİ SEKMESİ İÇERİĞİ === -->
+      <!-- === VIEW 2: PROGRESS (TARAMA AŞAMASI) === -->
       <!-- =================================================================== -->
-      <section id="ai" class="tab-content">
-        <div class="card">
-          <div id="aiSuggestions">
-            <p class="muted">Tarama sonuçları geldikten sonra burada öneriler görünecek.</p>
+      <section id="view-progress" class="view-section">
+        <div class="progress-container">
+          <div class="loading-spinner" style="font-size: 18px; color: var(--accent);">Taranıyor...</div>
+          <div class="progress-steps">
+            <div class="step-item" id="step-network">
+              <div class="step-icon">1</div>
+              <div class="step-label">Network analiz ediliyor...</div>
+            </div>
+            <div class="step-item" id="step-dom">
+              <div class="step-icon">2</div>
+              <div class="step-label">DOM kontrol ediliyor...</div>
+            </div>
+            <div class="step-item" id="step-cookies">
+              <div class="step-icon">3</div>
+              <div class="step-label">Cookieler inceleniyor...</div>
+            </div>
+            <div class="step-item" id="step-analysis">
+              <div class="step-icon">4</div>
+              <div class="step-label">Sonuçlar analiz ediliyor...</div>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- === VIEW 3: DASHBOARD (SONUÇLAR & TABS) === -->
+      <!-- =================================================================== -->
+      <section id="view-dashboard" class="view-section">
+        <!-- Tab Navigation (Moved to Global Header) -->
+
+        <!-- === SONUÇLAR SEKMESİ İÇERİĞİ === -->
+        <div id="results" class="tab-content active">
+          <div class="controls">
+            <button id="newScanBtn" class="secondary-btn-theme" style="margin-right: auto;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 21h5v-5"/></svg>
+                Yeni Tarama
+            </button>
+            <!-- Eski scanBtn kaldırıldı, yerine startAgentScanBtn geldi -->
+          </div>
+          <div class="card">
+            <div class="card-title">
+              <h2>Tespit Edilen Açıklar</h2>
+              <div class="export-buttons">
+                <button id="exportJson" title="JSON">JSON</button>
+                <button id="exportCsv" title="CSV">CSV</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>🔧 Değerlendirme Modelleri</h3>
+            <div class="model-selector">
+              <div class="model-group">
+                <label>Score Method:</label>
+                <select id="scoreMethodSelect"></select>
+              </div>
+              <div class="model-group">
+                <label>Fuzzy Logic:</label>
+                <select id="fuzzyLogicSelect"></select>
+              </div>
+            </div>
+          </div>
+          <div class="filters">
+            <span>Filtrele:</span>
+            <div class="filter-buttons">
+              <button class="filter active" data-sev="all">Tümü</button>
+              <button class="filter" data-sev="high">Yüksek</button>
+              <button class="filter" data-sev="medium">Orta</button>
+              <button class="filter" data-sev="low">Düşük</button>
+            </div>
+          </div>
+          
+          <!-- YENİ: Liste ve Detayları içeren Konteyner -->
+          <div id="resultsContainer">
+            <!-- Zafiyet Listesi -->
+            <div id="vulnList" class="vuln-list">
+              <div class="empty-state">
+                <p>Henüz tarama yapılmadı.</p>
+              </div>
+            </div>
+            <!-- Zafiyet Detayları (Başlangıçta Gizli) -->
+            <div id="vulnDetails" style="display: none;">
+              <!-- Detay içeriği JS tarafından eklenecek -->
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- === AI ÇÖZÜM ÖNERİLERİ SEKMESİ İÇERİĞİ === -->
+        <!-- =================================================================== -->
+        <div id="ai" class="tab-content">
+          <div class="card">
+            <div class="model-group">
+              <label for="aiModelSelect">AI Modeli:</label>
+              <select id="aiModelSelect"></select>
+            </div>
+          </div>
+          <div id="aiVulnList" class="vuln-list">
+              <div class="empty-state">
+                <p>Henüz tarama yapılmadı veya açık bulunamadı.</p>
+              </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- === AYARLAR SEKMESİ İÇERİĞİ (TAB) === -->
+        <!-- =================================================================== -->
+        <div id="settings" class="tab-content">
+           <div class="card">
+             <h3>Ayarlar</h3>
+             <p>Ayarları değiştirmek için ana ekrandaki ayarlar butonunu kullanın.</p>
+           </div>
+        </div>
+
+      </section> <!-- End of view-dashboard -->
+
+      <!-- =================================================================== -->
+      <!-- === VIEW 4: SETTINGS (AYARLAR SAYFASI) === -->
+      <!-- =================================================================== -->
+      <section id="view-settings" class="view-section">
+        <div class="card" style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px;">
+            <button id="backFromSettingsBtn" class="secondary-btn-theme" style="padding: 8px 12px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            </button>
+            <h2 style="margin:0; font-size: 18px;">Ayarlar</h2>
+        </div>
+
+        <div class="settings-container">
+            <!-- Scan Behavior -->
+            <div class="settings-group">
+                <h3>Tarama Davranışı</h3>
+                <div class="checkbox-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="setting-autoScan">
+                    <span>Sayfa yüklendiğinde otomatik analiz öner</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="setting-networkMonitor" checked>
+                    <span>Ağ trafiğini (XHR/Fetch) izle</span>
+                </label>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="setting-domMonitor" checked>
+                    <span>DOM değişikliklerini (Mutations) izle</span>
+                </label>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="settings-group">
+                <h3>Raporlama Filtreleri</h3>
+                <div class="form-group">
+                <label>Görüntülenecek Seviyeler</label>
+                <div class="checkbox-group" style="flex-direction: row; gap: 20px;">
+                    <label class="checkbox-label"><input type="checkbox" name="setting-severity" value="high" checked> Yüksek</label>
+                    <label class="checkbox-label"><input type="checkbox" name="setting-severity" value="medium" checked> Orta</label>
+                    <label class="checkbox-label"><input type="checkbox" name="setting-severity" value="low" checked> Düşük</label>
+                </div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button id="resetSettingsBtn" class="secondary">Varsayılan</button>
+                <button id="saveSettingsBtn" class="primary">Kaydet</button>
+            </div>
         </div>
       </section>
 
@@ -93,6 +250,7 @@
       <small>Web Güvenlik Tarayıcısı — <span id="statusText">Hazır</span></small>
     </footer>
   </div>
+  <script src="llmService.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

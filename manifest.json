@@ -7,10 +7,12 @@
     "activeTab",
     "scripting",
     "storage",
-    "alarms"
+    "alarms",
+    "webRequest"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://openrouter.ai/api/*"
   ],
   "action": {
     "default_popup": "popup.html",
@@ -25,7 +27,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["fuzzyLogic.json", "scoreMethods.json"],
+      "resources": ["fuzzyLogic.json", "scoreMethods.json", ".env"],
       "matches": ["<all_urls>"]
     }
   ]

@@ -1,5 +1,3 @@
-
-
 # Web Güvenlik Tarayıcısı Chrome Uzantısı
 
 Bu Chrome uzantısı, web sayfalarındaki potansiyel güvenlik açıklarını tespit etmek için tasarlanmıştır. XSS, güvensiz cookie kullanımı, şifre alanı güvenliği, CSP eksikliği ve daha fazlası gibi yaygın güvenlik sorunlarını kontrol eder. Eğitim ve test amaçlıdır.

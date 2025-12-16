@@ -6,64 +6,93 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tarayıcı Ayarları</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Page specific overrides */
+    body { background-color: var(--bg-color); color: var(--text-color); padding: 0; margin: 0; height: 100vh; overflow: hidden; }
+    .settings-layout { display: flex; flex-direction: column; height: 100%; }
+    .settings-header { padding: 16px 24px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 15px; background: var(--card-bg); }
+    .settings-header h2 { margin: 0; font-size: 18px; }
+    .settings-content { flex: 1; padding: 24px; overflow-y: auto; }
+    .settings-group { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .settings-group h3 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px; color: var(--accent); font-size: 16px; }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; }
+    .checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+    .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+    .actions { padding: 16px 24px; border-top: 1px solid var(--border-color); background: var(--card-bg); display: flex; justify-content: flex-end; gap: 10px; }
+    
+    select.full-width {
+        width: 100%;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-color);
+        color: var(--text-color);
+    }
+  </style>
 </head>
 <body>
-  <div class="modal">
-    <header class="modal-header">
-      <h1>Web Güvenlik Tarayıcısı - Ayarlar</h1>
-      <button id="backBtn" class="back-button">← Geri Dön</button>
+  <div class="settings-layout">
+    <header class="settings-header">
+      <button id="backBtn" class="secondary" style="padding: 8px 12px; min-width: auto;">&larr;</button>
+      <h2>Ayarlar</h2>
     </header>
 
-    <div class="settings-container">
-      <div class="card">
-        <div class="card-title">
-          <h2>Filtreleme Ayarları</h2>
+    <div class="settings-content">
+      
+      <!-- AI Configuration -->
+      <div class="settings-group">
+        <h3>Yapay Zeka (AI) Yapılandırması</h3>
+        <div class="form-group">
+          <label for="defaultAiModel">Varsayılan Analiz Modeli</label>
+          <select id="defaultAiModel" class="full-width">
+            <option value="gpt-4o">GPT-4o (Önerilen)</option>
+            <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Hızlı)</option>
+            <option value="claude-3-opus">Claude 3 Opus</option>
+          </select>
+          <small style="color: #888; display: block; margin-top: 5px;">Analizler için kullanılacak birincil LLM modeli.</small>
         </div>
-        
-        <div class="settings-section">
-          <h3>Güvenlik Açığı Seviyesi</h3>
-          <div class="filter-options">
-            <label>
-              <input type="checkbox" name="severity" value="high" checked> Yüksek
-            </label>
-            <label>
-              <input type="checkbox" name="severity" value="medium" checked> Orta
-            </label>
-            <label>
-              <input type="checkbox" name="severity" value="low" checked> Düşük
-            </label>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <h3>Açık Türleri</h3>
-          <div class="filter-options">
-            <label>
-              <input type="checkbox" name="vulnType" value="xss" checked> XSS (Cross-Site Scripting)
-            </label>
-            <label>
-              <input type="checkbox" name="vulnType" value="sqli" checked> SQL Injection
-            </label>
-            <label>
-              <input type="checkbox" name="vulnType" value="csrf" checked> CSRF (Cross-Site Request Forgery)
-            </label>
-            <label>
-              <input type="checkbox" name="vulnType" value="other" checked> Diğer
-            </label>
-          </div>
-        </div>
-
-      <div class="settings-actions">
-        <button id="saveSettingsBtn" class="primary">Ayarları Kaydet</button>
-        <button id="resetSettingsBtn">Varsayılana Sıfırla</button>
       </div>
+
+      <!-- Scan Behavior -->
+      <div class="settings-group">
+        <h3>Tarama Davranışı</h3>
+        <div class="checkbox-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="autoScan">
+            <span>Sayfa yüklendiğinde otomatik analiz öner</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="networkMonitor" checked>
+            <span>Ağ trafiğini (XHR/Fetch) izle</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="domMonitor" checked>
+            <span>DOM değişikliklerini (Mutations) izle</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Filters (Existing) -->
+      <div class="settings-group">
+        <h3>Raporlama Filtreleri</h3>
+        <div class="form-group">
+          <label>Görüntülenecek Seviyeler</label>
+          <div class="checkbox-group" style="flex-direction: row; gap: 20px;">
+            <label class="checkbox-label"><input type="checkbox" name="severity" value="high" checked> Yüksek</label>
+            <label class="checkbox-label"><input type="checkbox" name="severity" value="medium" checked> Orta</label>
+            <label class="checkbox-label"><input type="checkbox" name="severity" value="low" checked> Düşük</label>
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <footer class="modal-footer">
-      <small>Web Güvenlik Tarayıcısı — <span id="statusText">Ayarlar</span></small>
-    </footer>
+    <div class="actions">
+      <button id="resetSettingsBtn" class="secondary">Varsayılan</button>
+      <button id="saveSettingsBtn" class="primary">Kaydet</button>
+    </div>
   </div>
-
   <script src="settings.js"></script>
 </body>
 </html>

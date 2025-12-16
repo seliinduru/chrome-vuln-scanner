@@ -17,93 +17,60 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('resetSettingsBtn').addEventListener('click', resetSettings);
 });
 
-// Mevcut ayarları yükle
+const DEFAULT_SETTINGS = {
+    aiModel: 'gpt-4o',
+    autoScan: false,
+    networkMonitor: true,
+    domMonitor: true,
+    severity: ['high', 'medium', 'low']
+};
+
 function loadSettings() {
   chrome.storage.local.get('scannerSettings', (result) => {
-    const settings = result.scannerSettings || getDefaultSettings();
+    const settings = { ...DEFAULT_SETTINGS, ...result.scannerSettings };
     
-    // Güvenlik açığı seviyesi
-    document.querySelectorAll('input[name="severity"]').forEach(checkbox => {
-      checkbox.checked = settings.severity.includes(checkbox.value);
-    });
+    // AI Model
+    const aiSelect = document.getElementById('defaultAiModel');
+    if(aiSelect) aiSelect.value = settings.aiModel;
+
+    // Toggles
+    const autoScan = document.getElementById('autoScan');
+    if(autoScan) autoScan.checked = settings.autoScan;
     
-    // Açık türleri
-    document.querySelectorAll('input[name="vulnType"]').forEach(checkbox => {
-      checkbox.checked = settings.vulnTypes.includes(checkbox.value);
-    });
+    const networkMonitor = document.getElementById('networkMonitor');
+    if(networkMonitor) networkMonitor.checked = settings.networkMonitor;
     
-    // Tarama seçenekleri (settings.html'de yok, ancak kodda tutuldu)
-    document.querySelectorAll('input[name="scanOption"]').forEach(checkbox => {
-      checkbox.checked = settings.scanOptions.includes(checkbox.value);
+    const domMonitor = document.getElementById('domMonitor');
+    if(domMonitor) domMonitor.checked = settings.domMonitor;
+
+    // Severity
+    document.querySelectorAll('input[name="severity"]').forEach(cb => {
+        cb.checked = settings.severity.includes(cb.value);
     });
   });
 }
 
-// Ayarları kaydet
 function saveSettings() {
   const settings = {
-    severity: [],
-    vulnTypes: [],
-    scanOptions: []
+    aiModel: document.getElementById('defaultAiModel').value,
+    autoScan: document.getElementById('autoScan').checked,
+    networkMonitor: document.getElementById('networkMonitor').checked,
+    domMonitor: document.getElementById('domMonitor').checked,
+    severity: Array.from(document.querySelectorAll('input[name="severity"]:checked')).map(cb => cb.value)
   };
   
-  // Güvenlik açığı seviyesi
-  document.querySelectorAll('input[name="severity"]:checked').forEach(checkbox => {
-    settings.severity.push(checkbox.value);
-  });
-  
-  // Açık türleri
-  document.querySelectorAll('input[name="vulnType"]:checked').forEach(checkbox => {
-    settings.vulnTypes.push(checkbox.value);
-  });
-  
-  // Tarama seçenekleri
-  document.querySelectorAll('input[name="scanOption"]:checked').forEach(checkbox => {
-    settings.scanOptions.push(checkbox.value);
-  });
-  
-  // Ayarları kaydet
   chrome.storage.local.set({ scannerSettings: settings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar kaydedildi';
-    setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
-    }, 2000);
+    const btn = document.getElementById('saveSettingsBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Kaydedildi!';
+    setTimeout(() => btn.textContent = originalText, 1500);
   });
 }
 
-// Varsayılan ayarları al
-function getDefaultSettings() {
-  return {
-    severity: ['high', 'medium', 'low'],
-    vulnTypes: ['xss', 'sqli', 'csrf', 'other'],
-    scanOptions: ['passive']
-  };
-}
 
 // Ayarları sıfırla
 function resetSettings() {
-  const defaultSettings = getDefaultSettings();
-  
-  // Güvenlik açığı seviyesi
-  document.querySelectorAll('input[name="severity"]').forEach(checkbox => {
-    checkbox.checked = defaultSettings.severity.includes(checkbox.value);
-  });
-  
-  // Açık türleri
-  document.querySelectorAll('input[name="vulnType"]').forEach(checkbox => {
-    checkbox.checked = defaultSettings.vulnTypes.includes(checkbox.value);
-  });
-  
-  // Tarama seçenekleri
-  document.querySelectorAll('input[name="scanOption"]').forEach(checkbox => {
-    checkbox.checked = defaultSettings.scanOptions.includes(checkbox.value);
-  });
-  
-  // Ayarları kaydet
-  chrome.storage.local.set({ scannerSettings: defaultSettings }, () => {
-    document.getElementById('statusText').textContent = 'Ayarlar sıfırlandı';
-    setTimeout(() => {
-      document.getElementById('statusText').textContent = 'Ayarlar';
-    }, 2000);
-  });
+    chrome.storage.local.set({ scannerSettings: DEFAULT_SETTINGS }, () => {
+        loadSettings();
+    });
 }
